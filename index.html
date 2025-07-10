@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspecciones v2 - Mobile</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100%; width: 100%; position: relative; }
+    #loading-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      z-index: 1000;
+    }
+    #form-modal {
+      position: absolute;
+      top: 10%; left: 50%;
+      transform: translateX(-50%);
+      width: 90%; max-width: 400px;
+      background: #fff;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: none;
+      max-height: 80%;
+      overflow-y: auto;
+      border-radius: 8px;
+      z-index: 1001;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 1em;
+    }
+    input[readonly], input, select, textarea {
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 4px;
+      padding: 10px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    textarea { height: 80px; resize: vertical; }
+    button {
+      margin-top: 16px;
+      padding: 14px;
+      font-size: 1.1em;
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+      background-color: #007bff;
+      color: white;
+    }
+    button#close-form {
+      background-color: #dc3545;
+    }
+    @media (max-width: 600px) {
+      #form-modal {
+        top: 0; left: 0;
+        transform: none;
+        width: 100%; height: 100%;
+        border-radius: 0;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="map">
+    <div id="loading-overlay">Cargando información...</div>
+  </div>
+
+  <div id="form-modal">
+    <h2>Inspección Centro</h2>
+    <form id="inspection-form" data-centro-id="">
+      <!-- Campos informativos -->
+      <label>Region PNRP:
+        <input type="text" id="regionPNRP" readonly />
+      </label>
+      <label>Procede:
+        <input type="text" id="procede" readonly />
+      </label>
+      <label>Sector:
+        <input type="text" id="sector" readonly />
+      </label>
+      <label>Nombre:
+        <input type="text" id="nombre" readonly />
+      </label>
+      <label>Latitud:
+        <input type="text" id="latitud" readonly />
+      </label>
+      <label>Longitud:
+        <input type="text" id="longitud" readonly />
+      </label>
+      <label>Municipio:
+        <input type="text" id="municipio" readonly />
+      </label>
+      <label>Circuito:
+        <input type="text" id="circuito" readonly />
+      </label>
+      <label>Beneficiarios:
+        <input type="text" id="beneficiarios" readonly />
+      </label>
+      <label>Voltaje:
+        <input type="text" id="voltaje" readonly />
+      </label>
+      <label>Lote PNRP:
+        <input type="text" id="lotePNRP" readonly />
+      </label>
+      <label>No. Lote UTCD:
+        <input type="text" id="noLoteUTCD" readonly />
+      </label>
+      <label>Prioridad:
+        <input type="text" id="prioridad" readonly />
+      </label>
+      <label>Sitio Repetido:
+        <input type="text" id="sitioRepetido" readonly />
+      </label>
+      <label>Supervisor UCTD-ENEE:
+        <input type="text" id="supervisorUCTDENEE" readonly />
+      </label>
+
+      <!-- Preguntas de formulario -->
+      <label>Capacidad Transformador existente más cercano (kVA):
+        <input type="number" id="capacidadTransformador" />
+      </label>
+      <label>ID transformador:
+        <input type="text" id="idTransformador" />
+      </label>
+      <label>Código Apoyo:
+        <input type="text" id="codigoApoyo" />
+      </label>
+      <label>Cantidad de Clientes (Obligatorio):
+        <input type="number" id="cantidadClientes" required />
+      </label>
+      <label>Riesgos Naturales:
+        <select id="riesgosNaturales">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <label>Observacion Riesgos Naturales:
+        <textarea id="observacionRiesgosNaturales"></textarea>
+      </label>
+      <label>Requerimiento de Acompañamiento de Policía o Ejército:
+        <select id="requerimientoAcompanamiento">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <label>Observacion Requerimiento de Acompañamiento:
+        <textarea id="observacionAcompanamiento"></textarea>
+      </label>
+      <label>Presencia de Pandillas o Actores al Margen de la Ley:
+        <select id="presenciaPandillas">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <label>Observacion Presencia de Pandillas:
+        <textarea id="observacionPandillas"></textarea>
+      </label>
+      <label>Otros:
+        <select id="otros">
+          <option value="">Seleccione</option>
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </label>
+      <label>Observacion Otros:
+        <textarea id="observacionOtros"></textarea>
+      </label>
+
+      <button type="submit">Guardar</button>
+    </form>
+    <button id="close-form">Cerrar</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbzibvgtDtXk3BzGzAXeEz5UQynv1F-XncCCWEutdtGCJuqTAsmwf7Nt7UGCESo63wy21Q/exec';
+
+    const map = L.map('map').setView([0, 0], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    async function loadMarkers() {
+      const overlay = document.getElementById('loading-overlay');
+      overlay.style.display = 'flex';
+      try {
+        const res = await fetch(`${SHEET_API_BASE}?action=getAllCentros`);
+        const centros = await res.json();
+        const bounds = [];
+        centros.forEach(c => {
+          const lat = parseFloat(c.latitud);
+          const lng = parseFloat(c.longitud);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            bounds.push([lat, lng]);
+            const marker = L.marker([lat, lng]).addTo(map);
+            marker.on('click', () => openForm(c.id));
+          }
+        });
+        if (bounds.length) map.fitBounds(bounds, { padding: [40, 40] });
+      } catch (err) { console.error('Error cargando centros', err); }
+      finally { overlay.style.display = 'none'; }
+    }
+
+    async function openForm(id) {
+      const res = await fetch(`${SHEET_API_BASE}?action=getCentro&id=${id}`);
+      const data = await res.json();
+      ['regionPNRP','procede','sector','nombre','latitud','longitud','municipio','circuito','beneficiarios','voltaje','lotePNRP','noLoteUTCD','prioridad','sitioRepetido','supervisorUCTDENEE']
+        .forEach(field => document.getElementById(field).value = data[field] || '');
+      document.getElementById('inspection-form').dataset.centroId = id;
+      document.getElementById('form-modal').style.display = 'block';
+    }
+
+    document.getElementById('close-form').addEventListener('click', () => {
+      document.getElementById('form-modal').style.display = 'none';
+    });
+
+    document.getElementById('inspection-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const id = e.target.dataset.centroId;
+      const respuestas = {
+        capacidadTransformador: document.getElementById('capacidadTransformador').value,
+        idTransformador: document.getElementById('idTransformador').value,
+        codigoApoyo: document.getElementById('codigoApoyo').value,
+        cantidadClientes: document.getElementById('cantidadClientes').value,
+        riesgosNaturales: document.getElementById('riesgosNaturales').value,
+        observacionRiesgosNaturales: document.getElementById('observacionRiesgosNaturales').value,
+        requerimientoAcompanamiento: document.getElementById('requerimientoAcompanamiento').value,
+        observacionAcompanamiento: document.getElementById('observacionAcompanamiento').value,
+        presenciaPandillas: document.getElementById('presenciaPandillas').value,
+        observacionPandillas: document.getElementById('observacionPandillas').value,
+        otros: document.getElementById('otros').value,
+        observacionOtros: document.getElementById('observacionOtros').value
+      };
+      try {
+        const res = await fetch(SHEET_API_BASE, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({action:'saveRespuestas', id, respuestas})
+        });
+        if (res.ok) {
+          alert('Respuestas guardadas');
+          document.getElementById('form-modal').style.display = 'none';
+        } else {
+          alert('Error al guardar');
+        }
+      } catch (err) {
+        console.error('Error guardando respuestas', err);
+        alert('Error al guardar');
+      }
+    });
+
+    // Inicializa marcadores al cargar
+    loadMarkers();
+  </script>
+</body>
+</html>
