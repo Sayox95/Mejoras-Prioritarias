@@ -94,7 +94,7 @@
       background: #fff; box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
       border-top-left-radius: 12px; border-top-right-radius: 12px;
       transform: translateY(100%); transition: transform 0.3s ease;
-      z-index: 1001; overflow-y: auto;
+      z-index: 2000; overflow-y: auto;
     }
     #sheet.open { transform: translateY(0); }
     #sheet-header {
@@ -216,6 +216,10 @@
     var closeBtn = document.getElementById('close-sheet');
     var snackbar = document.getElementById('snackbar');
     var dataSpinner = document.getElementById('data-loading');
+    var filterFab = document.getElementById('filter-fab');
+    var filterSheet = document.getElementById('filter-sheet');
+    var filterFab = document.getElementById('filter-fab');
+    var filterSheet = document.getElementById('filter-sheet');
     var markers = [];
     var sectors = new Set();
 
@@ -281,6 +285,8 @@
     };
 
     function openSheet(id) {
+      filterFab.style.display = 'none';
+      filterSheet.style.display = 'none';
       dataSpinner.style.display = 'flex';
       fetch(SHEET_API_BASE + '?action=getCentro&id=' + id)
         .then(response => response.json())
@@ -297,7 +303,10 @@
         });
     }
 
-    closeBtn.onclick = function() { sheet.classList.remove('open'); };
+    closeBtn.onclick = function() { sheet.classList.remove('open');
+      filterFab.style.display = '';
+      filterSheet.style.display = '';
+      filterFab.style.display = 'flex'; };
 
     document.getElementById('inspection-form').onsubmit = function(e) {
       e.preventDefault();
@@ -309,18 +318,26 @@
         riesgosNaturales: document.getElementById('riesgosNaturales').value,
         observacionRiesgosNaturales: document.getElementById('observacionRiesgosNaturales').value
       };
-      fetch(SHEET_API_BASE + '?action=saveRespuestas&id=' + id, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ respuestas: respuestas })
-      })
-      .then(function(resp) {
-        if (resp.ok) {
+      dataSpinner.style.display = 'flex';
+      var url = SHEET_API_BASE
+        + '?action=saveRespuestas'
+        + '&id=' + encodeURIComponent(id)
+        + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
+      fetch(url)
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          dataSpinner.style.display = 'none';
           sheet.classList.remove('open');
+          filterFab.style.display = '';
+          filterSheet.style.display = '';
+          filterFab.style.display = 'flex';
           snackbar.classList.add('show');
           setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
-        }
-      }).catch(function(e) { console.error(e); });
+        })
+        .catch(function(err) {
+          console.error(err);
+          dataSpinner.style.display = 'none';
+        });
     };
 
     loadMarkers();
