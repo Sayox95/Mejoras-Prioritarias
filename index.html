@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inspecciones v2 - Mobile con FAB de filtros</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inspecciones v2 - Mobile con FAB de filtros</title>
+<link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet"/>
+<style>
     html, body { margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif; }
     #map { height: 100%; width: 100%; position: relative; }
     #loading-overlay {
@@ -28,6 +29,20 @@
     
       flex-direction: column;
     }
+    /* Overlay para “Guardando información…” */
+    #save-loading {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+      z-index: 2005;           /* Por encima del sheet (z-index:2000) */
+      flex-direction: column;
+    }
+
 
     /* Spinner circular */
     #data-loading .spinner {
@@ -39,6 +54,17 @@
       animation: spin 1s linear infinite;
       margin-bottom: 10px;
     }
+
+    #save-loading .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #007bff;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    
 
     @keyframes spin {
       0% { transform: rotate(0deg); }
@@ -134,79 +160,136 @@
     #snackbar.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
     @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
     @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
-  </style>
+  
+    /* Text styling for saving overlay */
+    #save-loading .save-text {
+      font-size: 1.2em;
+      margin-top: 10px;
+      color: #333;
+    }
+    </style>
 </head>
 <body>
-  <div id="map">
-    <div id="loading-overlay">Cargando información...</div>
-    <div id="data-loading">
-    <div class="spinner"></div>
-    <div>Cargando Datos...</div>
-  </div>
-  </div>
-  <button id="filter-fab">🔍</button>
-  <div id="filter-sheet">
-    <div id="filter-header">
-      <h2>Filtros</h2>
-      <button id="close-filter">&times;</button>
-    </div>
-    <div id="filter-content">
-      <label>Sector:
+<div id="map">
+<div id="loading-overlay">Cargando información...</div>
+<div id="data-loading">
+<div class="spinner"></div>
+<div>Cargando Datos...</div>
+</div>
+<div id="save-loading">
+<div class="spinner"></div>
+<div class="save-text">Guardando información...</div>
+</div>
+</div>
+
+<button id="filter-fab">🔍</button>
+<div id="filter-sheet">
+<div id="filter-header">
+<h2>Filtros</h2>
+<button id="close-filter">×</button>
+</div>
+<div id="filter-content">
+<label>Sector:
         <select id="sectorFilter">
-          <option value="all">Todos los sectores</option>
-        </select>
-      </label>
-      <button id="apply-filters">Aplicar</button>
-    </div>
-  </div>
-
-  <div id="sheet">
-    <div id="sheet-header">
-      <h2>Inspección Centro</h2>
-      <button id="close-sheet">&times;</button>
-    </div>
-    <div id="progress">Paso 1 de 3</div>
-    <form id="inspection-form" data-centro-id="">
-      <details open>
-        <summary>Datos del Centro</summary>
-        <div>
-          <label>Region PNRP:<input type="text" id="regionPNRP" readonly /></label>
-          <label>Procede:<input type="text" id="procede" readonly /></label>
-          <label>Sector:<input type="text" id="sector" readonly /></label>
-          <label>Nombre:<input type="text" id="nombre" readonly /></label>
-          <label>Municipio:<input type="text" id="municipio" readonly /></label>
-        </div>
-      </details>
-      <details>
-        <summary>Ubicación y Circuito</summary>
-        <div>
-          <label>Latitud:<input type="text" id="latitud" readonly /></label>
-          <label>Longitud:<input type="text" id="longitud" readonly /></label>
-          <label>Circuito:<input type="text" id="circuito" readonly /></label>
-          <label>Voltaje:<input type="text" id="voltaje" readonly /></label>
-        </div>
-      </details>
-      <details>
-        <summary>Inspección y Observaciones</summary>
-        <div>
-          <label>Capacidad Transformador (kVA):<input type="number" id="capacidadTransformador" /></label>
-          <label>ID transformador:<input type="text" id="idTransformador" /></label>
-          <label>Cantidad de Clientes:<input type="number" id="cantidadClientes" required /></label>
-          <label>Riesgos Naturales:<select id="riesgosNaturales"><option value="">Seleccione</option><option>Sí</option><option>No</option></select></label>
-          <label>Observación Riesgos:<textarea id="observacionRiesgosNaturales"></textarea></label>
-        </div>
-      </details>
-      <button type="submit" id="save-btn">Guardar Respuestas</button>
-    </form>
-  </div>
-
-  <div id="snackbar">Guardado exitoso</div>
-
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbxoZus4rh9BdHxiUjdwzDy7cZidG0WYyTX5SdxnZjWpFyjoyY8jLvp1a3AS_ukB5z5rrQ/exec';
+<option value="all">Todos los sectores</option>
+</select>
+</label>
+<label>Estado:
+        <select id="estadoFilter">
+<option value="all">Todos los estados</option>
+<option value="Pendiente">Pendiente</option>
+<option value="Completado">Completado</option>
+</select>
+</label>
+<button id="apply-filters">Aplicar</button>
+</div>
+</div>
+<div id="sheet">
+<div id="sheet-header">
+<h2>Inspección Centro</h2>
+<button id="close-sheet">×</button>
+</div>
+<div id="progress">Paso 1 de 3</div>
+<form data-centro-id="" id="inspection-form">
+<details open="">
+<summary>Datos del Centro</summary>
+<div>
+<label>Region PNRP:<input id="regionPNRP" readonly="" type="text"/></label>
+<label>Procede:<input id="procede" readonly="" type="text"/></label>
+<label>Sector:<input id="sector" readonly="" type="text"/></label>
+<label>Nombre:<input id="nombre" readonly="" type="text"/></label>
+<label>Municipio:<input id="municipio" readonly="" type="text"/></label>
+</div>
+</details>
+<details>
+<summary>Ubicación y Circuito</summary>
+<div>
+<label>Latitud:<input id="latitud" readonly="" type="text"/></label>
+<label>Longitud:<input id="longitud" readonly="" type="text"/></label>
+<label>Circuito:<input id="circuito" readonly="" type="text"/></label>
+<label>Voltaje:<input id="voltaje" readonly="" type="text"/></label>
+</div>
+</details>
+<details>
+<summary>Inspección y Observaciones</summary>
+<div>
+<label>Supervisor UCTD-ENEE:<input id="supervisorUCTD" type="text"/></label>
+<label>Capacidad Transformador existente más cercano (kVA):<input id="capacidadTransformador" type="number"/></label>
+<label>ID transformador:<input id="idTransformador" type="text"/></label>
+<label>Código Apoyo:<input id="codigoApoyo" type="text"/></label>
+<label>Cantidad de Clientes (Obligatorio):<input id="cantidadClientes" required="" type="number"/></label>
+<label>Riesgos Naturales:
+      <select id="riesgosNaturales">
+<option value="">Seleccione</option>
+<option>Sí</option>
+<option>No</option>
+</select>
+</label>
+<label>Observacion Riesgos Naturales:<textarea id="observacionRiesgosNaturales"></textarea></label>
+<label>Requerimiento de Acompañamiento de Policía o Ejército:
+      <select id="requerimientoAcompanamiento">
+<option value="">Seleccione</option>
+<option>Sí</option>
+<option>No</option>
+</select>
+</label>
+<label>Observacion Requerimiento de Acompañamiento:<textarea id="observacionAcompanamiento"></textarea></label>
+<label>Presencia de Pandillas o Actores al Margen de la Ley:
+      <select id="presenciaPandillas">
+<option value="">Seleccione</option>
+<option>Sí</option>
+<option>No</option>
+</select>
+</label>
+<label>Observacion Presencia de Pandillas:<textarea id="observacionPandillas"></textarea></label>
+<label>Otros:<select id="otros"><option value="">Seleccione</option><option value="Sí">Sí</option><option value="No">No</option></select></label>
+<label>Observacion Otros:<textarea id="observacionOtros"></textarea></label>
+</div>
+</details>
+<button id="save-btn" type="submit">Guardar Respuestas</button>
+</form>
+</div>
+<div id="snackbar">Guardado exitoso</div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwGyQoElI99hKVyR_28Uad0OUMZa2Zc50OU2fUrcWM3NsH9yY22yMfXyFMncw42eBsH5w/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    
+    var redIcon = new L.Icon({
+      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    var greenIcon = new L.Icon({
+      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/green-dot.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
     var overlay = document.getElementById('loading-overlay');
     var filterFab = document.getElementById('filter-fab');
     var filterSheet = document.getElementById('filter-sheet');
@@ -216,6 +299,7 @@
     var closeBtn = document.getElementById('close-sheet');
     var snackbar = document.getElementById('snackbar');
     var dataSpinner = document.getElementById('data-loading');
+    var saveSpinner = document.getElementById('save-loading');
     var filterFab = document.getElementById('filter-fab');
     var filterSheet = document.getElementById('filter-sheet');
     var filterFab = document.getElementById('filter-fab');
@@ -238,8 +322,9 @@
           centros.forEach(function(c) {
             var lat = parseFloat(c.latitud), lng = parseFloat(c.longitud);
             if (!isNaN(lat) && !isNaN(lng)) {
-              var m = L.marker([lat,lng]).addTo(map);
-              m.id = c.id; m.sector = c.sector;
+              var icon = (c.estado === 'Completado') ? greenIcon : redIcon;
+              var m = L.marker([lat,lng], { icon: icon }).addTo(map);
+              m.id = c.id; m.sector = c.sector; m.estado = c.estado;
               var popupContent = '<div><strong>' + (c.nombre||'') + '</strong><br><button onclick="openSheet(\'' + c.id + '\')">Inspeccionar</button></div>';
               m.bindPopup(popupContent);
               markers.push(m);
@@ -271,10 +356,12 @@
     };
     applyFilters.onclick = function() {
       var sel = document.getElementById('sectorFilter').value;
+      var estadoSel = document.getElementById('estadoFilter').value;
       filterSheet.classList.remove('open');
       var visibleBounds = [];
       markers.forEach(function(m) {
-        if (sel === 'all' || m.sector === sel) {
+        if ((sel === 'all' || m.sector === sel) &&
+          (estadoSel === 'all' || (estadoSel === 'Completado' && m.options.icon === greenIcon) || (estadoSel === 'Pendiente' && m.options.icon === redIcon))) {
           map.addLayer(m);
           visibleBounds.push(m.getLatLng());
         } else {
@@ -312,13 +399,21 @@
       e.preventDefault();
       var id = this.dataset.centroId;
       var respuestas = {
-        capacidadTransformador: document.getElementById('capacidadTransformador').value,
-        idTransformador: document.getElementById('idTransformador').value,
-        cantidadClientes: document.getElementById('cantidadClientes').value,
-        riesgosNaturales: document.getElementById('riesgosNaturales').value,
-        observacionRiesgosNaturales: document.getElementById('observacionRiesgosNaturales').value
+  supervisorUCTD:                document.getElementById('supervisorUCTD').value,
+  capacidadTransformador:        document.getElementById('capacidadTransformador').value,
+  idTransformador:               document.getElementById('idTransformador').value,
+  codigoApoyo:                   document.getElementById('codigoApoyo').value,
+  cantidadClientes:              document.getElementById('cantidadClientes').value,
+  riesgosNaturales:              document.getElementById('riesgosNaturales').value,
+  observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
+  requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
+  observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
+  presenciaPandillas:            document.getElementById('presenciaPandillas').value,
+  observacionPandillas:          document.getElementById('observacionPandillas').value,
+  otros:                         document.getElementById('otros').value,
+  observacionOtros:              document.getElementById('observacionOtros').value
       };
-      dataSpinner.style.display = 'flex';
+      saveSpinner.style.display = 'flex';
       var url = SHEET_API_BASE
         + '?action=saveRespuestas'
         + '&id=' + encodeURIComponent(id)
@@ -326,17 +421,28 @@
       fetch(url)
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
-          dataSpinner.style.display = 'none';
+          saveSpinner.style.display = 'none';
+              // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
           sheet.classList.remove('open');
           filterFab.style.display = '';
           filterSheet.style.display = '';
           filterFab.style.display = 'flex';
           snackbar.classList.add('show');
+
+          // Cambiar ícono del marcador correspondiente a "completado"
+          const marker = markers.find(m => m.id === parseInt(id));
+          if (marker) {
+            marker.setIcon(greenIcon);
+          }
+
           setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
         })
         .catch(function(err) {
           console.error(err);
-          dataSpinner.style.display = 'none';
+          saveSpinner.style.display = 'none';
+              // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
         });
     };
 
