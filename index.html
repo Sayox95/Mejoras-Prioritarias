@@ -228,7 +228,12 @@
 <label>Circuito:<input id="circuito" readonly="" type="text"/></label>
 <label>Voltaje:<input id="voltaje" readonly="" type="text"/></label>
 </div>
-</details>
+</details><details><summary>Fotografías</summary><div>
+<label>Subir o tomar fotografías:
+  <input accept="image/*" capture="environment" id="fotosInput" multiple="" type="file"/>
+</label>
+<div id="miniaturasFotos" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
+</div></details>
 <details>
 <summary>Inspección y Observaciones</summary>
 <div>
@@ -306,12 +311,43 @@
 </label>
 </div>
 </details><button id="save-btn" type="submit">Guardar Respuestas</button>
-<button id="descargar-xlsx-btn" type="button">Descargar Ficha Excel</button></form>
+</form>
 </div>
 <div id="snackbar">Guardado exitoso</div>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js">
+    function enviarRespuestas(id, respuestas) {
+      var url = SHEET_API_BASE
+        + '?action=saveRespuestas'
+        + '&id=' + encodeURIComponent(id)
+        + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
+      fetch(url)
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          saveSpinner.style.display = 'none';
+          document.getElementById('inspection-form').reset();
+          sheet.classList.remove('open');
+          filterFab.style.display = '';
+          filterSheet.style.display = '';
+          filterFab.style.display = 'flex';
+          snackbar.classList.add('show');
+
+          const marker = markers.find(m => m.id === parseInt(id));
+          if (marker) {
+            marker.setIcon(greenIcon);
+          }
+
+          setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
+        })
+        .catch(function(err) {
+          console.error(err);
+          saveSpinner.style.display = 'none';
+          document.getElementById('inspection-form').reset();
+        });
+    }
+
+</script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwkCO6L0qHnvF0l7vgbmo5z-R6-jinpYLaKaqCzKERTVU70vSijJkj4TmnLyeM8hd9hvA/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwWcrpV_AmwIpkkrziJ6uurdV0qVvXPABi4Q-_Z3jU2LzBarG3yLN9iRflVXQnT-OitJg/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -462,6 +498,43 @@ var respuestas = {
   observacionesGenerales:        document.getElementById('observacionesGenerales').value
 };
       saveSpinner.style.display = 'flex';
+
+      // Agregar las fotos al objeto respuestas
+      var fotosInput = document.getElementById('fotosInput');
+      var fotos = [];
+      if (fotosInput.files.length > 0) {
+        var files = Array.from(fotosInput.files);
+        for (var i = 0; i < files.length; i++) {
+          var reader = new FileReader();
+          reader.onloadend = function(f, idx) {
+            return function(e) {
+              fotos.push({
+                nombre: f.name,
+                contenido: e.target.result
+              });
+              if (fotos.length === files.length) {
+                respuestas.fotos = fotos;
+                enviarRespuestas(id, respuestas);
+              }
+            }
+          }(files[i], i);
+          reader.readAsDataURL(files[i]);
+        }
+      } else {
+        respuestas.fotos = [];
+        enviarRespuestas(id, respuestas);
+      }
+      return; // Prevenir ejecución inmediata de fetch
+
+    };
+
+    loadMarkers();
+  
+
+// Eliminado: descarga manual de Excel.
+
+
+    function enviarRespuestas(id, respuestas) {
       var url = SHEET_API_BASE
         + '?action=saveRespuestas'
         + '&id=' + encodeURIComponent(id)
@@ -470,15 +543,13 @@ var respuestas = {
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
           saveSpinner.style.display = 'none';
-              // Limpiar el formulario de preguntas
-              document.getElementById('inspection-form').reset();
+          document.getElementById('inspection-form').reset();
           sheet.classList.remove('open');
           filterFab.style.display = '';
           filterSheet.style.display = '';
           filterFab.style.display = 'flex';
           snackbar.classList.add('show');
 
-          // Cambiar ícono del marcador correspondiente a "completado"
           const marker = markers.find(m => m.id === parseInt(id));
           if (marker) {
             marker.setIcon(greenIcon);
@@ -489,27 +560,28 @@ var respuestas = {
         .catch(function(err) {
           console.error(err);
           saveSpinner.style.display = 'none';
-              // Limpiar el formulario de preguntas
-              document.getElementById('inspection-form').reset();
+          document.getElementById('inspection-form').reset();
         });
-    };
-
-    loadMarkers();
-  
-
-document.getElementById("descargar-xlsx-btn").onclick = function () {
-  const id = document.getElementById('inspection-form').dataset.centroId;
-  fetch(SHEET_API_BASE + '?action=generateFichaXLSX&id=' + id)
-    .then(r => r.json())
-    .then(data => {
-      if (data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        alert("No se pudo generar el archivo Excel.");
-      }
-    });
-};
+    }
 
 </script>
-</body>
+<script>
+document.getElementById('fotosInput').addEventListener('change', function(event) {
+  const miniaturas = document.getElementById('miniaturasFotos');
+  miniaturas.innerHTML = '';
+  Array.from(event.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.width = '60px';
+      img.style.height = '60px';
+      img.style.objectFit = 'cover';
+      img.style.border = '1px solid #ccc';
+      miniaturas.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  });
+});
+</script></body>
 </html>
