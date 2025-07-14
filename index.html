@@ -497,7 +497,6 @@ var respuestas = {
     loadMarkers();
   
 
-
 document.getElementById("descargar-xlsx-btn").onclick = function () {
   const id = document.getElementById('inspection-form').dataset.centroId;
   fetch(SHEET_API_BASE + '?action=generateFichaXLSX&id=' + id)
@@ -510,6 +509,7 @@ document.getElementById("descargar-xlsx-btn").onclick = function () {
       }
     });
 };
+
 </script>
 </body>
 </html>
