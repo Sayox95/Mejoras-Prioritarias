@@ -181,7 +181,6 @@
 <div class="save-text">Guardando información...</div>
 </div>
 </div>
-
 <button id="filter-fab">🔍</button>
 <div id="filter-sheet">
 <div id="filter-header">
@@ -265,14 +264,54 @@
 <label>Otros:<select id="otros"><option value="">Seleccione</option><option value="Sí">Sí</option><option value="No">No</option></select></label>
 <label>Observacion Otros:<textarea id="observacionOtros"></textarea></label>
 </div>
-</details>
-<button id="save-btn" type="submit">Guardar Respuestas</button>
-</form>
+</details><details>
+<summary>Evaluación de Conflictividad y Responsable</summary>
+<div>
+<label for="nivelConflictividad">Nivel de Conflictividad - Renuencia:
+    <select id="nivelConflictividad">
+<option value="">Seleccione</option>
+<option>Alto</option>
+<option>Medio</option>
+<option>Bajo</option>
+</select>
+</label>
+<label for="observacionConflictividad">Observación:
+    <input id="observacionConflictividad" type="text"/>
+</label>
+<label for="nivelRiesgo">Nivel de Riesgo Asociado:
+    <select id="nivelRiesgo">
+<option value="">Seleccione</option>
+<option>Alto</option>
+<option>Medio</option>
+<option>Bajo</option>
+</select>
+</label>
+<label for="observacionRiesgo">Observación:
+    <input id="observacionRiesgo" type="text"/>
+</label>
+<label for="nombreResponsable">Nombre Completo:
+    <input id="nombreResponsable" type="text"/>
+</label>
+<label for="cargoResponsable">Cargo:
+    <input id="cargoResponsable" type="text"/>
+</label>
+<label for="institucionResponsable">Institución / Patronato:
+    <input id="institucionResponsable" type="text"/>
+</label>
+<label for="telefonosResponsable">Teléfonos:
+    <input id="telefonosResponsable" type="text"/>
+</label>
+<label for="observacionesGenerales">Observaciones generales:
+    <textarea id="observacionesGenerales"></textarea>
+</label>
+</div>
+</details><button id="save-btn" type="submit">Guardar Respuestas</button>
+<button id="descargar-xlsx-btn" type="button">Descargar Ficha Excel</button></form>
 </div>
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwGyQoElI99hKVyR_28Uad0OUMZa2Zc50OU2fUrcWM3NsH9yY22yMfXyFMncw42eBsH5w/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbyx7DfNGPzwpevc1ouVEtf2-Wbg-9AT7pAiAiEalVS0_H8Tmj-r0WBdvXrmZ_r2IkB2Ew/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -398,7 +437,7 @@
     document.getElementById('inspection-form').onsubmit = function(e) {
       e.preventDefault();
       var id = this.dataset.centroId;
-      var respuestas = {
+var respuestas = {
   supervisorUCTD:                document.getElementById('supervisorUCTD').value,
   capacidadTransformador:        document.getElementById('capacidadTransformador').value,
   idTransformador:               document.getElementById('idTransformador').value,
@@ -411,8 +450,17 @@
   presenciaPandillas:            document.getElementById('presenciaPandillas').value,
   observacionPandillas:          document.getElementById('observacionPandillas').value,
   otros:                         document.getElementById('otros').value,
-  observacionOtros:              document.getElementById('observacionOtros').value
-      };
+  observacionOtros:              document.getElementById('observacionOtros').value,
+  nivelConflictividad:           document.getElementById('nivelConflictividad').value,
+  observacionConflictividad:     document.getElementById('observacionConflictividad').value,
+  nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
+  observacionRiesgo:             document.getElementById('observacionRiesgo').value,
+  nombreResponsable:             document.getElementById('nombreResponsable').value,
+  cargoResponsable:              document.getElementById('cargoResponsable').value,
+  institucionResponsable:        document.getElementById('institucionResponsable').value,
+  telefonosResponsable:          document.getElementById('telefonosResponsable').value,
+  observacionesGenerales:        document.getElementById('observacionesGenerales').value
+};
       saveSpinner.style.display = 'flex';
       var url = SHEET_API_BASE
         + '?action=saveRespuestas'
@@ -447,6 +495,21 @@
     };
 
     loadMarkers();
-  </script>
+  
+
+
+document.getElementById("descargar-xlsx-btn").onclick = function () {
+  const id = document.getElementById('inspection-form').dataset.centroId;
+  fetch(SHEET_API_BASE + '?action=generateFichaXLSX&id=' + id)
+    .then(r => r.json())
+    .then(data => {
+      if (data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        alert("No se pudo generar el archivo Excel.");
+      }
+    });
+};
+</script>
 </body>
 </html>
