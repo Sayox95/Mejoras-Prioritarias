@@ -314,40 +314,9 @@
 </form>
 </div>
 <div id="snackbar">Guardado exitoso</div>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js">
-    function enviarRespuestas(id, respuestas) {
-      var url = SHEET_API_BASE
-        + '?action=saveRespuestas'
-        + '&id=' + encodeURIComponent(id)
-        + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
-      fetch(url)
-        .then(function(resp) { return resp.json(); })
-        .then(function(data) {
-          saveSpinner.style.display = 'none';
-          document.getElementById('inspection-form').reset();
-          sheet.classList.remove('open');
-          filterFab.style.display = '';
-          filterSheet.style.display = '';
-          filterFab.style.display = 'flex';
-          snackbar.classList.add('show');
-
-          const marker = markers.find(m => m.id === parseInt(id));
-          if (marker) {
-            marker.setIcon(greenIcon);
-          }
-
-          setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
-        })
-        .catch(function(err) {
-          console.error(err);
-          saveSpinner.style.display = 'none';
-          document.getElementById('inspection-form').reset();
-        });
-    }
-
-</script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwWcrpV_AmwIpkkrziJ6uurdV0qVvXPABi4Q-_Z3jU2LzBarG3yLN9iRflVXQnT-OitJg/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbzseUnU1mnggFZcdTqrVtZpgb7fqTm9qehu98arFkD4-J5ftJwXcQej39yApKEkFpgaKg/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -470,7 +439,7 @@
       filterSheet.style.display = '';
       filterFab.style.display = 'flex'; };
 
-    document.getElementById('inspection-form').onsubmit = function(e) {
+    document.getElementById('inspection-form').onsubmit = async function(e) {
       e.preventDefault();
       var id = this.dataset.centroId;
 var respuestas = {
@@ -498,58 +467,39 @@ var respuestas = {
   observacionesGenerales:        document.getElementById('observacionesGenerales').value
 };
       saveSpinner.style.display = 'flex';
-
-      // Agregar las fotos al objeto respuestas
-      var fotosInput = document.getElementById('fotosInput');
-      var fotos = [];
-      if (fotosInput.files.length > 0) {
-        var files = Array.from(fotosInput.files);
-        for (var i = 0; i < files.length; i++) {
-          var reader = new FileReader();
-          reader.onloadend = function(f, idx) {
-            return function(e) {
-              fotos.push({
-                nombre: f.name,
-                contenido: e.target.result
-              });
-              if (fotos.length === files.length) {
-                respuestas.fotos = fotos;
-                enviarRespuestas(id, respuestas);
-              }
-            }
-          }(files[i], i);
-          reader.readAsDataURL(files[i]);
-        }
-      } else {
-        respuestas.fotos = [];
-        enviarRespuestas(id, respuestas);
-      }
-      return; // Prevenir ejecución inmediata de fetch
-
-    };
-
-    loadMarkers();
-  
-
-// Eliminado: descarga manual de Excel.
-
-
-    function enviarRespuestas(id, respuestas) {
       var url = SHEET_API_BASE
         + '?action=saveRespuestas'
         + '&id=' + encodeURIComponent(id)
         + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
-      fetch(url)
+      
+      const files = document.getElementById('fotosInput').files;
+      const fotos = await Promise.all(Array.from(files).map(async (file) => {
+        const base64 = await fileToBase64(file);
+        return { nombre: file.name, contenido: base64 };
+      }));
+      respuestas.fotos = fotos;
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+fetch(url)
         .then(function(resp) { return resp.json(); })
         .then(function(data) {
           saveSpinner.style.display = 'none';
-          document.getElementById('inspection-form').reset();
+              // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
           sheet.classList.remove('open');
           filterFab.style.display = '';
           filterSheet.style.display = '';
           filterFab.style.display = 'flex';
           snackbar.classList.add('show');
 
+          // Cambiar ícono del marcador correspondiente a "completado"
           const marker = markers.find(m => m.id === parseInt(id));
           if (marker) {
             marker.setIcon(greenIcon);
@@ -560,9 +510,15 @@ var respuestas = {
         .catch(function(err) {
           console.error(err);
           saveSpinner.style.display = 'none';
-          document.getElementById('inspection-form').reset();
+              // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
         });
-    }
+    };
+
+    loadMarkers();
+  
+
+// Eliminado: descarga manual de Excel.
 
 </script>
 <script>
