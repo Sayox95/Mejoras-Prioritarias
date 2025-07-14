@@ -316,7 +316,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbzseUnU1mnggFZcdTqrVtZpgb7fqTm9qehu98arFkD4-J5ftJwXcQej39yApKEkFpgaKg/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbyd5RwGAm8GhkeugAj07J8OXrK1G_8YkrLRoJNd-A45OKD7byhq3CLe9fRRV-EaSMeJ/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -466,54 +466,52 @@ var respuestas = {
   telefonosResponsable:          document.getElementById('telefonosResponsable').value,
   observacionesGenerales:        document.getElementById('observacionesGenerales').value
 };
-      saveSpinner.style.display = 'flex';
-      var url = SHEET_API_BASE
-        + '?action=saveRespuestas'
-        + '&id=' + encodeURIComponent(id)
-        + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
-      
-      const files = document.getElementById('fotosInput').files;
-      const fotos = await Promise.all(Array.from(files).map(async (file) => {
-        const base64 = await fileToBase64(file);
-        return { nombre: file.name, contenido: base64 };
-      }));
-      respuestas.fotos = fotos;
+      // 👉 Convertir fotos a base64
+  const files = document.getElementById('fotosInput').files;
+  const fotos = await Promise.all(Array.from(files).map(file => fileToBase64(file)));
+  respuestas.fotos = fotos;
 
-      function fileToBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ nombre: file.name, contenido: reader.result });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // 👉 Enviar por POST (JSON completo)
+  saveSpinner.style.display = 'flex';
+  const url = SHEET_API_BASE + '?action=saveRespuestas&id=' + encodeURIComponent(id);
+
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ respuestas })
+  })
+    .then(resp => resp.json())
+    .then(data => {
+      saveSpinner.style.display = 'none';
+      document.getElementById('inspection-form').reset();
+      sheet.classList.remove('open');
+      filterFab.style.display = 'flex';
+      snackbar.classList.add('show');
+
+      const marker = markers.find(m => m.id === parseInt(id));
+      if (marker) {
+        marker.setIcon(greenIcon);
       }
-fetch(url)
-        .then(function(resp) { return resp.json(); })
-        .then(function(data) {
-          saveSpinner.style.display = 'none';
-              // Limpiar el formulario de preguntas
-              document.getElementById('inspection-form').reset();
-          sheet.classList.remove('open');
-          filterFab.style.display = '';
-          filterSheet.style.display = '';
-          filterFab.style.display = 'flex';
-          snackbar.classList.add('show');
 
-          // Cambiar ícono del marcador correspondiente a "completado"
-          const marker = markers.find(m => m.id === parseInt(id));
-          if (marker) {
-            marker.setIcon(greenIcon);
-          }
-
-          setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
-        })
-        .catch(function(err) {
-          console.error(err);
-          saveSpinner.style.display = 'none';
-              // Limpiar el formulario de preguntas
-              document.getElementById('inspection-form').reset();
-        });
-    };
+      setTimeout(() => snackbar.classList.remove('show'), 3000);
+    })
+    .catch(err => {
+      console.error(err);
+      saveSpinner.style.display = 'none';
+      document.getElementById('inspection-form').reset();
+    });
+};
 
     loadMarkers();
   
