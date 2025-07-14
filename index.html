@@ -316,7 +316,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwmyfPgPmJ3T72YOO5rlQqbYSBlePrImTx69lM35l7SzmussSDf8BGSVJB-ECcWtKjVoQ/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbx8JyteyYXOyPm2SxqcWnJGfpAJCxaGpsKg-Q6cuiCGmMZs6bqZkvhq5RlaVTxt-jo-ZQ/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -440,78 +440,84 @@
       filterFab.style.display = 'flex'; };
 
     document.getElementById('inspection-form').onsubmit = async function(e) {
-      e.preventDefault();
-      var id = this.dataset.centroId;
-var respuestas = {
-  supervisorUCTD:                document.getElementById('supervisorUCTD').value,
-  capacidadTransformador:        document.getElementById('capacidadTransformador').value,
-  idTransformador:               document.getElementById('idTransformador').value,
-  codigoApoyo:                   document.getElementById('codigoApoyo').value,
-  cantidadClientes:              document.getElementById('cantidadClientes').value,
-  riesgosNaturales:              document.getElementById('riesgosNaturales').value,
-  observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
-  requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
-  observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
-  presenciaPandillas:            document.getElementById('presenciaPandillas').value,
-  observacionPandillas:          document.getElementById('observacionPandillas').value,
-  otros:                         document.getElementById('otros').value,
-  observacionOtros:              document.getElementById('observacionOtros').value,
-  nivelConflictividad:           document.getElementById('nivelConflictividad').value,
-  observacionConflictividad:     document.getElementById('observacionConflictividad').value,
-  nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
-  observacionRiesgo:             document.getElementById('observacionRiesgo').value,
-  nombreResponsable:             document.getElementById('nombreResponsable').value,
-  cargoResponsable:              document.getElementById('cargoResponsable').value,
-  institucionResponsable:        document.getElementById('institucionResponsable').value,
-  telefonosResponsable:          document.getElementById('telefonosResponsable').value,
-  observacionesGenerales:        document.getElementById('observacionesGenerales').value
-};
-      // 👉 Convertir fotos a base64
-  const files = document.getElementById('fotosInput').files;
-  const fotos = await Promise.all(Array.from(files).map(file => fileToBase64(file)));
-  respuestas.fotos = fotos;
+  e.preventDefault();
+  const id = this.dataset.centroId;
+  const respuestas = {
+    supervisorUCTD:                document.getElementById('supervisorUCTD').value,
+    capacidadTransformador:        document.getElementById('capacidadTransformador').value,
+    idTransformador:               document.getElementById('idTransformador').value,
+    codigoApoyo:                   document.getElementById('codigoApoyo').value,
+    cantidadClientes:              document.getElementById('cantidadClientes').value,
+    riesgosNaturales:              document.getElementById('riesgosNaturales').value,
+    observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
+    requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
+    observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
+    presenciaPandillas:            document.getElementById('presenciaPandillas').value,
+    observacionPandillas:          document.getElementById('observacionPandillas').value,
+    otros:                         document.getElementById('otros').value,
+    observacionOtros:              document.getElementById('observacionOtros').value,
+    nivelConflictividad:           document.getElementById('nivelConflictividad').value,
+    observacionConflictividad:     document.getElementById('observacionConflictividad').value,
+    nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
+    observacionRiesgo:             document.getElementById('observacionRiesgo').value,
+    nombreResponsable:             document.getElementById('nombreResponsable').value,
+    cargoResponsable:              document.getElementById('cargoResponsable').value,
+    institucionResponsable:        document.getElementById('institucionResponsable').value,
+    telefonosResponsable:          document.getElementById('telefonosResponsable').value,
+    observacionesGenerales:        document.getElementById('observacionesGenerales').value,
+    fotos: []
+  };
 
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve({ nombre: file.name, contenido: reader.result });
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+  const files = document.getElementById('fotosInput').files;
+
+  if (files.length > 0) {
+    for (const file of files) {
+      const base64 = await toBase64(file);
+      respuestas.fotos.push({
+        nombre: file.name,
+        contenido: base64
+      });
+    }
   }
 
-  // 👉 Enviar por POST (JSON completo)
   saveSpinner.style.display = 'flex';
-  const url = SHEET_API_BASE + '?action=saveRespuestas&id=' + encodeURIComponent(id);
 
-  fetch(url, {
+  fetch(SHEET_API_BASE, {
     method: 'POST',
+    body: JSON.stringify({
+      id: id,
+      respuestas: respuestas
+    }),
     headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ respuestas })
+      'Content-Type': 'application/json'
+    }
   })
-    .then(resp => resp.json())
-    .then(data => {
-      saveSpinner.style.display = 'none';
-      document.getElementById('inspection-form').reset();
-      sheet.classList.remove('open');
-      filterFab.style.display = 'flex';
-      snackbar.classList.add('show');
-
-      const marker = markers.find(m => m.id === parseInt(id));
-      if (marker) {
-        marker.setIcon(greenIcon);
-      }
-
-      setTimeout(() => snackbar.classList.remove('show'), 3000);
-    })
-    .catch(err => {
-      console.error(err);
-      saveSpinner.style.display = 'none';
-      document.getElementById('inspection-form').reset();
-    });
+  .then(res => res.json())
+  .then(data => {
+    saveSpinner.style.display = 'none';
+    document.getElementById('inspection-form').reset();
+    sheet.classList.remove('open');
+    filterFab.style.display = 'flex';
+    snackbar.classList.add('show');
+    const marker = markers.find(m => m.id === parseInt(id));
+    if (marker) marker.setIcon(greenIcon);
+    setTimeout(() => snackbar.classList.remove('show'), 3000);
+  })
+  .catch(err => {
+    console.error(err);
+    saveSpinner.style.display = 'none';
+    alert("Error al guardar los datos.");
+  });
 };
+
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 
     loadMarkers();
   
