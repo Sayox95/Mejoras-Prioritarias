@@ -311,7 +311,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbw5GNQFwOgbF6IGlNhjnrTC2E4ylP1nnQNeNyuHYa5B6vkTkTe6E3QvpMMhIVuZOJbJQA/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbzD0dR6C98DqOpKjHvHjLUfxoKI1jI17DMLs0qSrX0U-3LSqJ5GWS-Vsj5V7fnvURF-mQ/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -502,29 +502,50 @@ var respuestas = {
 
 </script>
 <script>
-const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwd9LZ9vSPb8ykZ-zcm6EM_I8Xge-W5Jh3G3Ntme0MXsPefJT3vRHobORv6khmWJw_v_g/exec';
+const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbykLNNbJApB20GtyIwWf7akekeBOCvw0M5U9Pi8zom-ObIc1VVN6wXFH2Ca-mgukYtAHA/exec';
 
-// Subir fotos usando FormData
 async function subirFotos(idCentro) {
   const input = document.getElementById('inputFotos');
   if (!input || !input.files.length) return;
+
   const files = input.files;
-  for (let i = 0; i < files.length; i++) {
-    const fd = new FormData();
-    fd.append('action', 'uploadPhoto');
-    fd.append('id', idCentro);
-    fd.append('index', i);
-    fd.append('photo', files[i], `foto_${i+1}.jpg`);
-    try {
-      const res = await fetch(UPLOAD_ENDPOINT, {
-        method: 'POST',
-        body: fd
-      });
-      const json = await res.json();
-      if (json.error) console.error('Error subiendo foto ' + (i+1) + ': ' + json.error);
-    } catch (err) {
-      console.error('Error subiendo foto ' + (i+1), err);
+  const fd = new FormData();
+
+  // Añadir datos generales
+  fd.append("action", "uploadPhotoBase64");
+  fd.append("cv", idCentro);
+  fd.append("nombre_centro", document.getElementById('nombre').value || "sin_nombre");
+
+  // Convertir cada imagen a base64 y agregarla como texto
+  const base64Promises = Array.from(files).map((file, index) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        fd.append(`foto_${index}`, base64); // 📌 base64 como texto
+        resolve();
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  });
+
+  await Promise.all(base64Promises);
+
+  try {
+    const res = await fetch(UPLOAD_ENDPOINT, {
+      method: "POST",
+      body: fd // NO poner headers
+    });
+
+    const json = await res.json();
+    if (json.success) {
+      console.log("Fotos subidas:", json.urls);
+    } else {
+      console.error("Error al subir:", json.error || json);
     }
+  } catch (err) {
+    console.error("Error subiendo fotos:", err);
   }
 }
 
