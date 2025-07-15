@@ -311,7 +311,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbzD0dR6C98DqOpKjHvHjLUfxoKI1jI17DMLs0qSrX0U-3LSqJ5GWS-Vsj5V7fnvURF-mQ/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbwhdRUrvc4A8olj7M6niwx-p1j68c4X6A6hcEMV06EBP29GvZY7cXXBoUIjLnsT-dD2-A/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -364,7 +364,13 @@
               var icon = (c.estado === 'Completado') ? greenIcon : redIcon;
               var m = L.marker([lat,lng], { icon: icon }).addTo(map);
               m.id = c.id; m.sector = c.sector; m.estado = c.estado;
-              var popupContent = '<div><strong>' + (c.nombre||'') + '</strong><br><button onclick="openSheet(\'' + c.id + '\')">Inspeccionar</button></div>';
+              var popupContent = '<div><strong>' + (c.nombre || '') + '</strong><br>';
+if (c.estado === 'Completado') {
+  popupContent += '<button onclick="verReporte(' + c.id + ')">Ver Reporte</button>';
+} else {
+  popupContent += '<button onclick="openSheet(\'' + c.id + '\')">Inspeccionar</button>';
+}
+popupContent += '</div>';
               m.bindPopup(popupContent);
               markers.push(m);
               bounds.push([lat,lng]);
@@ -495,6 +501,29 @@ var respuestas = {
         });
     };
 
+    
+    function verReporte(id) {
+      const spinner = document.getElementById("redirect-spinner");
+      spinner.style.display = "block";
+
+      fetch(SHEET_API_BASE + '?action=getCentro&id=' + id)
+        .then(res => res.json())
+        .then(data => {
+          if (data.urlCarpeta) {
+            window.open(data.urlCarpeta, '_blank');
+          } else {
+            alert("No se encontró la carpeta del centro.");
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Error al obtener datos del centro.");
+        })
+        .finally(() => {
+          setTimeout(() => spinner.style.display = "none", 2000);
+        });
+    }
+
     loadMarkers();
   
 
@@ -554,5 +583,39 @@ async function subirFotos(idCentro) {
 
 
 
+
+<div id="redirect-spinner" style="
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px 30px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px #999;
+  z-index: 9999;
+  text-align: center;
+  font-family: sans-serif;
+">
+  <div class="spinner" style="
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px auto;
+  "></div>
+  <div style="font-size: 16px; color: #333;">Redireccionando a la carpeta...</div>
+</div>
+
+<style>
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
 </body>
+
 </html>
