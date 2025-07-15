@@ -305,7 +305,34 @@
     <textarea id="observacionesGenerales"></textarea>
 </label>
 </div>
-</details><div id="previewFotos" style="margin-bottom:10px;"></div><input accept="image/*" capture="environment" id="inputFotos" multiple="multiple" style="display:block;margin-bottom:10px" type="file"></input><label for="inputFotos">📷 Fotografías (puedes subir o tomar varias):</label><button id="save-btn" type="submit">Guardar Respuestas</button>
+</details>
+<div class="mb-4">
+  <label class="block text-sm font-medium text-gray-700 mb-1">Fotografías</label>
+
+  <!-- Previews -->
+  <div id="previewFotos" style="margin-bottom:10px; display: flex; flex-direction: column; gap: 10px;"></div>
+
+  <!-- Input galería -->
+  <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;" onchange="handleFileSelect(event)">
+  <button type="button" onclick="document.getElementById('galleryInput').click()"
+    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+    Subir desde galería
+  </button>
+
+  <!-- Input cámara -->
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple style="display:none;" onchange="handleCameraCapture(event)">
+  <button type="button" onclick="document.getElementById('cameraInput').click()"
+    class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+    Tomar fotografía
+  </button>
+
+  <!-- Input oculto que es leído por el sistema de subida -->
+  <input id="inputFotos" type="file" accept="image/*" multiple style="display:none;" />
+
+  <p id="cameraTip" class="text-xs text-gray-500 mt-1" style="display:none;">Volvé a presionar el botón para tomar otra fotografía.</p>
+</div>
+
+<button id="save-btn" type="submit">Guardar Respuestas</button>
 </form>
 </div>
 <div id="snackbar">Guardado exitoso</div>
@@ -485,10 +512,17 @@ var respuestas = {
           filterFab.style.display = 'flex';
           snackbar.classList.add('show');
 
-          // Cambiar ícono del marcador correspondiente a "completado"
+// Cambiar ícono del marcador correspondiente a "completado"
           const marker = markers.find(m => m.id === parseInt(id));
           if (marker) {
-            marker.setIcon(greenIcon);
+  marker.setIcon(greenIcon);
+  marker.estado = 'Completado';
+  const popupContent = generarPopupContent({
+    nombre: document.getElementById('nombre').value,
+    estado: 'Completado',
+    id: id
+  });
+  marker.setPopupContent(popupContent);
           }
 
           setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
@@ -530,6 +564,19 @@ function verReporte(id) {
       setTimeout(() => spinner.style.display = "none", 2000);
     });
 }
+
+
+function generarPopupContent(centro) {
+  let html = `<div><strong>${centro.nombre || ''}</strong><br>`;
+  if (centro.estado === 'Completado') {
+    html += `<button onclick="verReporte(${centro.id})">Ver Reporte</button>`;
+  } else {
+    html += `<button onclick="openSheet('${centro.id}')">Inspeccionar</button>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
 
 loadMarkers();
   
@@ -623,6 +670,56 @@ async function subirFotos(idCentro) {
   100% { transform: rotate(360deg); }
 }
 </style>
+
+<script>
+function handleFileSelect(event) {
+  const files = event.target.files;
+  const preview = document.getElementById('previewFotos');
+  preview.innerHTML = '';
+
+  if (!files || files.length === 0) {
+    preview.innerHTML = '<p style="color: #999;">No se seleccionaron imágenes.</p>';
+    return;
+  }
+
+  document.getElementById('inputFotos').files = event.target.files;
+
+  Array.from(files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.gap = '10px';
+
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.width = '80px';
+      img.style.borderRadius = '6px';
+      img.style.border = '1px solid #ccc';
+
+      const label = document.createElement('span');
+      label.textContent = file.name;
+      label.style.fontSize = '0.9em';
+      label.style.color = '#333';
+
+      container.appendChild(img);
+      container.appendChild(label);
+      preview.appendChild(container);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function handleCameraCapture(event) {
+  handleFileSelect(event);
+  const tip = document.getElementById('cameraTip');
+  if (tip) {
+    tip.style.display = 'block';
+  }
+}
+</script>
+
 </body>
 
 </html>
