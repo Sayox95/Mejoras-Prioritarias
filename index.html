@@ -228,12 +228,7 @@
 <label>Circuito:<input id="circuito" readonly="" type="text"/></label>
 <label>Voltaje:<input id="voltaje" readonly="" type="text"/></label>
 </div>
-</details><details><summary>Fotografías</summary><div>
-<label>Subir o tomar fotografías:
-  <input accept="image/*" capture="environment" id="fotosInput" multiple="" type="file"/>
-</label>
-<div id="miniaturasFotos" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;"></div>
-</div></details>
+</details>
 <details>
 <summary>Inspección y Observaciones</summary>
 <div>
@@ -310,13 +305,13 @@
     <textarea id="observacionesGenerales"></textarea>
 </label>
 </div>
-</details><button id="save-btn" type="submit">Guardar Respuestas</button>
+</details><div id="previewFotos" style="margin-bottom:10px;"></div><input accept="image/*" capture="environment" id="inputFotos" multiple="multiple" style="display:block;margin-bottom:10px" type="file"></input><label for="inputFotos">📷 Fotografías (puedes subir o tomar varias):</label><button id="save-btn" type="submit">Guardar Respuestas</button>
 </form>
 </div>
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycby0Lt4-Ie56JU4j6jGEwwbgdqNvfnZAuKHol05raXkh6rii5d-45bGEpHfDYQi7LAo5Nw/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbw5GNQFwOgbF6IGlNhjnrTC2E4ylP1nnQNeNyuHYa5B6vkTkTe6E3QvpMMhIVuZOJbJQA/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -439,85 +434,66 @@
       filterSheet.style.display = '';
       filterFab.style.display = 'flex'; };
 
-    document.getElementById('inspection-form').onsubmit = async function(e) {
-  e.preventDefault();
-  const id = this.dataset.centroId;
-  const respuestas = {
-    supervisorUCTD:                document.getElementById('supervisorUCTD').value,
-    capacidadTransformador:        document.getElementById('capacidadTransformador').value,
-    idTransformador:               document.getElementById('idTransformador').value,
-    codigoApoyo:                   document.getElementById('codigoApoyo').value,
-    cantidadClientes:              document.getElementById('cantidadClientes').value,
-    riesgosNaturales:              document.getElementById('riesgosNaturales').value,
-    observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
-    requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
-    observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
-    presenciaPandillas:            document.getElementById('presenciaPandillas').value,
-    observacionPandillas:          document.getElementById('observacionPandillas').value,
-    otros:                         document.getElementById('otros').value,
-    observacionOtros:              document.getElementById('observacionOtros').value,
-    nivelConflictividad:           document.getElementById('nivelConflictividad').value,
-    observacionConflictividad:     document.getElementById('observacionConflictividad').value,
-    nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
-    observacionRiesgo:             document.getElementById('observacionRiesgo').value,
-    nombreResponsable:             document.getElementById('nombreResponsable').value,
-    cargoResponsable:              document.getElementById('cargoResponsable').value,
-    institucionResponsable:        document.getElementById('institucionResponsable').value,
-    telefonosResponsable:          document.getElementById('telefonosResponsable').value,
-    observacionesGenerales:        document.getElementById('observacionesGenerales').value,
-    fotos: []
-  };
-
-  const files = document.getElementById('fotosInput').files;
-
-  if (files.length > 0) {
-    for (const file of files) {
-      const base64 = await toBase64(file);
-      respuestas.fotos.push({
-        nombre: file.name,
-        contenido: base64
-      });
-    }
-  }
-
-  saveSpinner.style.display = 'flex';
-
-  fetch(SHEET_API_BASE, {
-    method: 'POST',
-    body: JSON.stringify({
-      id: id,
-      respuestas: respuestas
-    }),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-  .then(res => res.json())
-  .then(data => {
-    saveSpinner.style.display = 'none';
-    document.getElementById('inspection-form').reset();
-    sheet.classList.remove('open');
-    filterFab.style.display = 'flex';
-    snackbar.classList.add('show');
-    const marker = markers.find(m => m.id === parseInt(id));
-    if (marker) marker.setIcon(greenIcon);
-    setTimeout(() => snackbar.classList.remove('show'), 3000);
-  })
-  .catch(err => {
-    console.error(err);
-    saveSpinner.style.display = 'none';
-    alert("Error al guardar los datos.");
-  });
+    document.getElementById('inspection-form').onsubmit = function(e) {
+      e.preventDefault();
+      var id = this.dataset.centroId;
+var respuestas = {
+  supervisorUCTD:                document.getElementById('supervisorUCTD').value,
+  capacidadTransformador:        document.getElementById('capacidadTransformador').value,
+  idTransformador:               document.getElementById('idTransformador').value,
+  codigoApoyo:                   document.getElementById('codigoApoyo').value,
+  cantidadClientes:              document.getElementById('cantidadClientes').value,
+  riesgosNaturales:              document.getElementById('riesgosNaturales').value,
+  observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
+  requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
+  observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
+  presenciaPandillas:            document.getElementById('presenciaPandillas').value,
+  observacionPandillas:          document.getElementById('observacionPandillas').value,
+  otros:                         document.getElementById('otros').value,
+  observacionOtros:              document.getElementById('observacionOtros').value,
+  nivelConflictividad:           document.getElementById('nivelConflictividad').value,
+  observacionConflictividad:     document.getElementById('observacionConflictividad').value,
+  nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
+  observacionRiesgo:             document.getElementById('observacionRiesgo').value,
+  nombreResponsable:             document.getElementById('nombreResponsable').value,
+  cargoResponsable:              document.getElementById('cargoResponsable').value,
+  institucionResponsable:        document.getElementById('institucionResponsable').value,
+  telefonosResponsable:          document.getElementById('telefonosResponsable').value,
+  observacionesGenerales:        document.getElementById('observacionesGenerales').value
 };
+      saveSpinner.style.display = 'flex';
+      var url = SHEET_API_BASE
+        + '?action=saveRespuestas'
+        + '&id=' + encodeURIComponent(id)
+        + '&respuestas=' + encodeURIComponent(JSON.stringify(respuestas));
+      fetch(url)
+        .then(function(resp) { return resp.json(); })
+        .then(function(data) {
+          saveSpinner.style.display = 'none';
+              subirFotos(id);
+          // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
+          sheet.classList.remove('open');
+          filterFab.style.display = '';
+          filterSheet.style.display = '';
+          filterFab.style.display = 'flex';
+          snackbar.classList.add('show');
 
-function toBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+          // Cambiar ícono del marcador correspondiente a "completado"
+          const marker = markers.find(m => m.id === parseInt(id));
+          if (marker) {
+            marker.setIcon(greenIcon);
+          }
+
+          setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
+        })
+        .catch(function(err) {
+          console.error(err);
+          saveSpinner.style.display = 'none';
+              // Limpiar el formulario de preguntas
+              document.getElementById('inspection-form').reset();
+        });
+    };
 
     loadMarkers();
   
@@ -526,22 +502,36 @@ function toBase64(file) {
 
 </script>
 <script>
-document.getElementById('fotosInput').addEventListener('change', function(event) {
-  const miniaturas = document.getElementById('miniaturasFotos');
-  miniaturas.innerHTML = '';
-  Array.from(event.target.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      img.style.width = '60px';
-      img.style.height = '60px';
-      img.style.objectFit = 'cover';
-      img.style.border = '1px solid #ccc';
-      miniaturas.appendChild(img);
-    };
-    reader.readAsDataURL(file);
-  });
-});
-</script></body>
+const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwd9LZ9vSPb8ykZ-zcm6EM_I8Xge-W5Jh3G3Ntme0MXsPefJT3vRHobORv6khmWJw_v_g/exec';
+
+// Subir fotos usando FormData
+async function subirFotos(idCentro) {
+  const input = document.getElementById('inputFotos');
+  if (!input || !input.files.length) return;
+  const files = input.files;
+  for (let i = 0; i < files.length; i++) {
+    const fd = new FormData();
+    fd.append('action', 'uploadPhoto');
+    fd.append('id', idCentro);
+    fd.append('index', i);
+    fd.append('photo', files[i], `foto_${i+1}.jpg`);
+    try {
+      const res = await fetch(UPLOAD_ENDPOINT, {
+        method: 'POST',
+        body: fd
+      });
+      const json = await res.json();
+      if (json.error) console.error('Error subiendo foto ' + (i+1) + ': ' + json.error);
+    } catch (err) {
+      console.error('Error subiendo foto ' + (i+1), err);
+    }
+  }
+}
+
+
+</script>
+
+
+
+</body>
 </html>
