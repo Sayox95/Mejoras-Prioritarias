@@ -502,29 +502,36 @@ var respuestas = {
     };
 
     
-    function verReporte(id) {
-      const spinner = document.getElementById("redirect-spinner");
-      spinner.style.display = "block";
+    
 
-      fetch(SHEET_API_BASE + '?action=getCentro&id=' + id)
-        .then(res => res.json())
-        .then(data => {
-          if (data.urlCarpeta) {
-            window.open(data.urlCarpeta, '_blank');
-          } else {
-            alert("No se encontró la carpeta del centro.");
-          }
-        })
-        .catch(err => {
-          console.error(err);
-          alert("Error al obtener datos del centro.");
-        })
-        .finally(() => {
-          setTimeout(() => spinner.style.display = "none", 2000);
-        });
-    }
+    
+function verReporte(id) {
+  const spinner = document.getElementById("redirect-spinner");
+  spinner.style.display = "block";
 
-    loadMarkers();
+  const nuevaPestana = window.open('about:blank', '_blank');
+
+  fetch(SHEET_API_BASE + '?action=getCentro&id=' + id)
+    .then(res => res.json())
+    .then(data => {
+      if (data.urlCarpeta) {
+        nuevaPestana.location.href = data.urlCarpeta;
+      } else {
+        nuevaPestana.close();
+        alert("No se encontró la carpeta del centro.");
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      nuevaPestana.close();
+      alert("Error al obtener datos del centro.");
+    })
+    .finally(() => {
+      setTimeout(() => spinner.style.display = "none", 2000);
+    });
+}
+
+loadMarkers();
   
 
 // Eliminado: descarga manual de Excel.
