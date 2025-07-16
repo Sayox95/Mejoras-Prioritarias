@@ -390,14 +390,8 @@
             if (!isNaN(lat) && !isNaN(lng)) {
               var icon = (c.estado === 'Completado') ? greenIcon : redIcon;
               var m = L.marker([lat,lng], { icon: icon }).addTo(map);
-              m.id = c.id; m.sector = c.sector; m.estado = c.estado;
-              var popupContent = '<div><strong>' + (c.nombre || '') + '</strong><br>';
-if (c.estado === 'Completado') {
-  popupContent += '<button onclick="verReporte(' + c.id + ')">Ver Reporte</button>';
-} else {
-  popupContent += '<button onclick="openSheet(\'' + c.id + '\')">Inspeccionar</button>';
-}
-popupContent += '</div>';
+              m.id = c.id; m.sector = c.sector; m.estado = c.estado; m.nombre = c.nombre;
+              var popupContent = generarPopupContent(m);
               m.bindPopup(popupContent);
               markers.push(m);
               bounds.push([lat,lng]);
@@ -444,6 +438,9 @@ popupContent += '</div>';
     };
 
     function openSheet(id) {
+        const form = document.getElementById('inspection-form');
+        form.reset();
+        document.getElementById('previewFotos').innerHTML = '';
       filterFab.style.display = 'none';
       filterSheet.style.display = 'none';
       dataSpinner.style.display = 'flex';
@@ -457,7 +454,6 @@ popupContent += '</div>';
           sheet.classList.add('open');
         })
         .catch(err => {
-          console.error(err);
           dataSpinner.style.display = 'none';
         });
     }
@@ -470,6 +466,7 @@ popupContent += '</div>';
     document.getElementById('inspection-form').onsubmit = function(e) {
       e.preventDefault();
       var id = this.dataset.centroId;
+      var nombreCentro = document.getElementById('nombre').value;
 var respuestas = {
   supervisorUCTD:                document.getElementById('supervisorUCTD').value,
   capacidadTransformador:        document.getElementById('capacidadTransformador').value,
@@ -506,29 +503,23 @@ var respuestas = {
               subirFotos(id);
           // Limpiar el formulario de preguntas
               document.getElementById('inspection-form').reset();
+              document.getElementById('previewFotos').innerHTML = '';
           sheet.classList.remove('open');
           filterFab.style.display = '';
           filterSheet.style.display = '';
           filterFab.style.display = 'flex';
           snackbar.classList.add('show');
+          setTimeout(() => snackbar.classList.remove('show'), 3000);
 
 // Cambiar ícono del marcador correspondiente a "completado"
           const marker = markers.find(m => m.id === parseInt(id));
           if (marker) {
-  marker.setIcon(greenIcon);
-  marker.estado = 'Completado';
-  const popupContent = generarPopupContent({
-    nombre: document.getElementById('nombre').value,
-    estado: 'Completado',
-    id: id
-  });
-  marker.setPopupContent(popupContent);
+              marker.nombre = nombreCentro;
+              marker.setIcon(greenIcon);
+              marker.estado = 'Completado';
+              const popupContent = generarPopupContent(marker);
+              marker.setPopupContent(popupContent);
           }
-
-          setTimeout(function() { snackbar.classList.remove('show'); }, 3000);
-        })
-        .catch(function(err) {
-          console.error(err);
           saveSpinner.style.display = 'none';
               // Limpiar el formulario de preguntas
               document.getElementById('inspection-form').reset();
@@ -556,7 +547,6 @@ function verReporte(id) {
       }
     })
     .catch(err => {
-      console.error(err);
       nuevaPestana.close();
       alert("Error al obtener datos del centro.");
     })
@@ -711,13 +701,44 @@ function handleFileSelect(event) {
   });
 }
 
+
 function handleCameraCapture(event) {
-  handleFileSelect(event);
+  const preview = document.getElementById('previewFotos');
+  const inputFotos = document.getElementById('inputFotos');
+  const newFiles = event.target.files;
+  // Merge existing and new files
+  const dt = new DataTransfer();
+  Array.from(inputFotos.files || []).forEach(file => dt.items.add(file));
+  Array.from(newFiles).forEach(file => dt.items.add(file));
+  inputFotos.files = dt.files;
+  // Append previews for new files only
+  Array.from(newFiles).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
+      container.style.gap = '10px';
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.width = '80px';
+      img.style.borderRadius = '6px';
+      img.style.border = '1px solid #ccc';
+      const label = document.createElement('span');
+      label.textContent = file.name;
+      label.style.fontSize = '0.9em';
+      label.style.color = '#333';
+      container.appendChild(img);
+      container.appendChild(label);
+      preview.appendChild(container);
+    };
+    reader.readAsDataURL(file);
+  });
+  // Show tip to capture more
   const tip = document.getElementById('cameraTip');
-  if (tip) {
-    tip.style.display = 'block';
-  }
+  if (tip) tip.style.display = 'block';
 }
+
 </script>
 
 </body>
