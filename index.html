@@ -379,7 +379,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbxRAEu-FFFEbw43tONUyKvlUmv157uMWFyLfT1G8_DueMewsWEJUgNFjLa4u1YCe4vUlw/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbyDjUOgjjN83MNhZxhzkMIZx3k3iH9pXgTH3UMdNHA61_-HAw2wKrKfQS9KQx1L5x20PA/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -508,38 +508,45 @@
       e.preventDefault();
       var id = this.dataset.centroId;
       var nombreCentro = document.getElementById('nombre').value;
-  supervisorUCTD:                document.getElementById('supervisorUCTD').value,
-  capacidadTransformador:        document.getElementById('capacidadTransformador').value,
-  idTransformador:               document.getElementById('idTransformador').value,
-  codigoApoyo:                   document.getElementById('codigoApoyo').value,
-  cantidadClientes:              document.getElementById('cantidadClientes').value,
-  riesgosNaturales:              document.getElementById('riesgosNaturales').value,
-  observacionRiesgosNaturales:   document.getElementById('observacionRiesgosNaturales').value,
-  requerimientoAcompanamiento:   document.getElementById('requerimientoAcompanamiento').value,
-  observacionAcompanamiento:     document.getElementById('observacionAcompanamiento').value,
-  presenciaPandillas:            document.getElementById('presenciaPandillas').value,
-  observacionPandillas:          document.getElementById('observacionPandillas').value,
-  otros:                         document.getElementById('otros').value,
-  observacionOtros:              document.getElementById('observacionOtros').value,
-  nivelConflictividad:           document.getElementById('nivelConflictividad').value,
-  observacionConflictividad:     document.getElementById('observacionConflictividad').value,
-  nivelRiesgo:                   document.getElementById('nivelRiesgo').value,
-  observacionRiesgo:             document.getElementById('observacionRiesgo').value,
-  nombreResponsable:             document.getElementById('nombreResponsable').value,
-  cargoResponsable:              document.getElementById('cargoResponsable').value,
-  institucionResponsable:        document.getElementById('institucionResponsable').value,
-  telefonosResponsable:          document.getElementById('telefonosResponsable').value,
-  nombreResponsable2:            document.getElementById('nombreResponsable2').value,
-  cargoResponsable2:             document.getElementById('cargoResponsable2').value,
-  institucionResponsable2:       document.getElementById('institucionResponsable2').value,
-  telefonosResponsable2:         document.getElementById('telefonosResponsable2').value,
-  nombreResponsable3:            document.getElementById('nombreResponsable3').value,
-  cargoResponsable3:             document.getElementById('cargoResponsable3').value,
-  institucionResponsable3:       document.getElementById('institucionResponsable3').value,
-  telefonosResponsable3:         document.getElementById('telefonosResponsable3').value,
+  var respuestas = {
+    supervisorUCTD:              document.getElementById('supervisorUCTD').value,
+    capacidadTransformador:      document.getElementById('capacidadTransformador').value,
+    idTransformador:             document.getElementById('idTransformador').value,
+    codigoApoyo:                 document.getElementById('codigoApoyo').value,
+    cantidadClientes:            document.getElementById('cantidadClientes').value,
+    riesgosNaturales:            document.getElementById('riesgosNaturales').value,
+    observacionRiesgosNaturales: document.getElementById('observacionRiesgosNaturales').value,
+    requerimientoAcompanamiento: document.getElementById('requerimientoAcompanamiento').value,
+    observacionAcompanamiento:   document.getElementById('observacionAcompanamiento').value,
+    presenciaPandillas:          document.getElementById('presenciaPandillas').value,
+    observacionPandillas:        document.getElementById('observacionPandillas').value,
+    otros:                       document.getElementById('otros').value,
+    observacionOtros:            document.getElementById('observacionOtros').value,
+    nivelConflictividad:         document.getElementById('nivelConflictividad').value,
+    observacionConflictividad:   document.getElementById('observacionConflictividad').value,
+    nivelRiesgo:                 document.getElementById('nivelRiesgo').value,
+    observacionRiesgo:           document.getElementById('observacionRiesgo').value,
 
-  observacionesGenerales:        document.getElementById('observacionesGenerales').value
-};
+    // Responsable 1
+    nombreResponsable:           document.getElementById('nombreResponsable').value,
+    cargoResponsable:            document.getElementById('cargoResponsable').value,
+    institucionResponsable:      document.getElementById('institucionResponsable').value,
+    telefonosResponsable:        document.getElementById('telefonosResponsable').value,
+
+    // Responsable 2
+    nombreResponsable2:          document.getElementById('nombreResponsable2').value,
+    cargoResponsable2:           document.getElementById('cargoResponsable2').value,
+    institucionResponsable2:     document.getElementById('institucionResponsable2').value,
+    telefonosResponsable2:       document.getElementById('telefonosResponsable2').value,
+
+    // Responsable 3
+    nombreResponsable3:          document.getElementById('nombreResponsable3').value,
+    cargoResponsable3:           document.getElementById('cargoResponsable3').value,
+    institucionResponsable3:     document.getElementById('institucionResponsable3').value,
+    telefonosResponsable3:       document.getElementById('telefonosResponsable3').value,
+
+    observacionesGenerales:      document.getElementById('observacionesGenerales').value
+  };
       saveSpinner.style.display = 'flex';
       var url = SHEET_API_BASE
         + '?action=saveRespuestas'
@@ -624,7 +631,7 @@ loadMarkers();
 
 </script>
 <script>
-const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxRAEu-FFFEbw43tONUyKvlUmv157uMWFyLfT1G8_DueMewsWEJUgNFjLa4u1YCe4vUlw/exec';
+const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyDjUOgjjN83MNhZxhzkMIZx3k3iH9pXgTH3UMdNHA61_-HAw2wKrKfQS9KQx1L5x20PA/exec';
 
 async function subirFotos(idCentro) {
   const input = document.getElementById('inputFotos');
