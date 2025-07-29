@@ -264,48 +264,89 @@
 <label>Otros:<select id="otros"><option value="">Seleccione</option><option value="Sí">Sí</option><option value="No">No</option></select></label>
 <label>Observacion Otros:<textarea id="observacionOtros"></textarea></label>
 </div>
-</details><details>
-<summary>Evaluación de Conflictividad y Responsable</summary>
-<div>
-<label for="nivelConflictividad">Nivel de Conflictividad - Renuencia:
-    <select id="nivelConflictividad">
-<option value="">Seleccione</option>
-<option>Alto</option>
-<option>Medio</option>
-<option>Bajo</option>
-</select>
-</label>
-<label for="observacionConflictividad">Observación:
-    <input id="observacionConflictividad" type="text"/>
-</label>
-<label for="nivelRiesgo">Nivel de Riesgo Asociado:
-    <select id="nivelRiesgo">
-<option value="">Seleccione</option>
-<option>Alto</option>
-<option>Medio</option>
-<option>Bajo</option>
-</select>
-</label>
-<label for="observacionRiesgo">Observación:
-    <input id="observacionRiesgo" type="text"/>
-</label>
-<label for="nombreResponsable">Nombre Completo:
-    <input id="nombreResponsable" type="text"/>
-</label>
-<label for="cargoResponsable">Cargo:
-    <input id="cargoResponsable" type="text"/>
-</label>
-<label for="institucionResponsable">Institución / Patronato:
-    <input id="institucionResponsable" type="text"/>
-</label>
-<label for="telefonosResponsable">Teléfonos:
-    <input id="telefonosResponsable" type="text"/>
-</label>
-<label for="observacionesGenerales">Observaciones generales:
-    <textarea id="observacionesGenerales"></textarea>
-</label>
-</div>
 </details>
+<details>
+  <summary>Evaluación de Conflictividad y Responsable</summary>
+  <div>
+    <label for="nivelConflictividad">Nivel de Conflictividad - Renuencia:
+      <select id="nivelConflictividad" name="nivelConflictividad">
+        <option value="">Seleccione</option>
+        <option>Alto</option>
+        <option>Medio</option>
+        <option>Bajo</option>
+      </select>
+    </label>
+    <label for="observacionConflictividad">Observación:
+      <input id="observacionConflictividad" name="observacionConflictividad" type="text"/>
+    </label>
+    <label for="nivelRiesgo">Nivel de Riesgo Asociado:
+      <select id="nivelRiesgo" name="nivelRiesgo">
+        <option value="">Seleccione</option>
+        <option>Alto</option>
+        <option>Medio</option>
+        <option>Bajo</option>
+      </select>
+    </label>
+    <label for="observacionRiesgo">Observación:
+      <input id="observacionRiesgo" name="observacionRiesgo" type="text"/>
+    </label>
+
+    <div id="responsables-container">
+      <div class="responsable-group" id="responsable-1">
+        <h4>Responsable 1</h4>
+        <label>Nombre Completo:
+          <input id="nombreResponsable" name="nombreResponsable" type="text"/>
+        </label>
+        <label>Cargo:
+          <input id="cargoResponsable" name="cargoResponsable" type="text"/>
+        </label>
+        <label>Institución / Patronato:
+          <input id="institucionResponsable" name="institucionResponsable" type="text"/>
+        </label>
+        <label>Teléfonos:
+          <input id="telefonosResponsable" name="telefonosResponsable" type="text"/>
+        </label>
+      </div>
+      <div class="responsable-group" id="responsable-2" style="display: none;">
+        <h4>Responsable 2</h4>
+        <label>Nombre Completo:
+          <input id="nombreResponsable2" name="nombreResponsable2" type="text"/>
+        </label>
+        <label>Cargo:
+          <input id="cargoResponsable2" name="cargoResponsable2" type="text"/>
+        </label>
+        <label>Institución / Patronato:
+          <input id="institucionResponsable2" name="institucionResponsable2" type="text"/>
+        </label>
+        <label>Teléfonos:
+          <input id="telefonosResponsable2" name="telefonosResponsable2" type="text"/>
+        </label>
+      </div>
+      <div class="responsable-group" id="responsable-3" style="display: none;">
+        <h4>Responsable 3</h4>
+        <label>Nombre Completo:
+          <input id="nombreResponsable3" name="nombreResponsable3" type="text"/>
+        </label>
+        <label>Cargo:
+          <input id="cargoResponsable3" name="cargoResponsable3" type="text"/>
+        </label>
+        <label>Institución / Patronato:
+          <input id="institucionResponsable3" name="institucionResponsable3" type="text"/>
+        </label>
+        <label>Teléfonos:
+          <input id="telefonosResponsable3" name="telefonosResponsable3" type="text"/>
+        </label>
+      </div>
+    </div>
+
+    <button type="button" id="add-responsable">Agregar otro responsable</button>
+
+    <label for="observacionesGenerales">Observaciones generales:
+      <textarea id="observacionesGenerales" name="observacionesGenerales"></textarea>
+    </label>
+  </div>
+</details>
+
 <div class="mb-4">
   <label class="block text-sm font-medium text-gray-700 mb-1">Fotografías</label>
 
@@ -338,7 +379,7 @@
 <div id="snackbar">Guardado exitoso</div>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
-    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbyDjUOgjjN83MNhZxhzkMIZx3k3iH9pXgTH3UMdNHA61_-HAw2wKrKfQS9KQx1L5x20PA/exec';
+    var SHEET_API_BASE = 'https://script.google.com/macros/s/AKfycbxRAEu-FFFEbw43tONUyKvlUmv157uMWFyLfT1G8_DueMewsWEJUgNFjLa4u1YCe4vUlw/exec';
     var map = L.map('map').setView([0,0],5);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     
@@ -467,7 +508,6 @@
       e.preventDefault();
       var id = this.dataset.centroId;
       var nombreCentro = document.getElementById('nombre').value;
-var respuestas = {
   supervisorUCTD:                document.getElementById('supervisorUCTD').value,
   capacidadTransformador:        document.getElementById('capacidadTransformador').value,
   idTransformador:               document.getElementById('idTransformador').value,
@@ -489,6 +529,15 @@ var respuestas = {
   cargoResponsable:              document.getElementById('cargoResponsable').value,
   institucionResponsable:        document.getElementById('institucionResponsable').value,
   telefonosResponsable:          document.getElementById('telefonosResponsable').value,
+  nombreResponsable2:            document.getElementById('nombreResponsable2').value,
+  cargoResponsable2:             document.getElementById('cargoResponsable2').value,
+  institucionResponsable2:       document.getElementById('institucionResponsable2').value,
+  telefonosResponsable2:         document.getElementById('telefonosResponsable2').value,
+  nombreResponsable3:            document.getElementById('nombreResponsable3').value,
+  cargoResponsable3:             document.getElementById('cargoResponsable3').value,
+  institucionResponsable3:       document.getElementById('institucionResponsable3').value,
+  telefonosResponsable3:         document.getElementById('telefonosResponsable3').value,
+
   observacionesGenerales:        document.getElementById('observacionesGenerales').value
 };
       saveSpinner.style.display = 'flex';
@@ -575,7 +624,7 @@ loadMarkers();
 
 </script>
 <script>
-const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyDjUOgjjN83MNhZxhzkMIZx3k3iH9pXgTH3UMdNHA61_-HAw2wKrKfQS9KQx1L5x20PA/exec';
+const UPLOAD_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxRAEu-FFFEbw43tONUyKvlUmv157uMWFyLfT1G8_DueMewsWEJUgNFjLa4u1YCe4vUlw/exec';
 
 async function subirFotos(idCentro) {
   const input = document.getElementById('inputFotos');
@@ -739,6 +788,22 @@ function handleCameraCapture(event) {
   if (tip) tip.style.display = 'block';
 }
 
+</script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    let current = 1;
+    document.getElementById('add-responsable').addEventListener('click', () => {
+      if (current < 3) {
+        current++;
+        document.getElementById(`responsable-${current}`).style.display = 'block';
+      }
+      if (current === 3) {
+        document.getElementById('add-responsable').style.display = 'none';
+      }
+    });
+  });
 </script>
 
 </body>
